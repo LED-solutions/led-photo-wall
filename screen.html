@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Photo Wall · Screen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Cormorant+Garamond:ital,wght@0,600;1,500;1,600&family=Inter:wght@400;500;600&family=Noto+Kufi+Arabic:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #0c0a09; --gold: #d9b779; --gold-2: #f0d7a4; --text: #f6f1ea; --u: 1vmin; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; cursor: none; }
+  body { background: var(--bg); color: var(--text); font-family: Inter, system-ui, sans-serif; }
+  body.transparent { background: transparent !important; }
+  body.dark-deco { background: radial-gradient(90% 70% at 50% 40%, #241b16 0%, var(--bg) 70%); }
+  #stage { position: fixed; inset: 0; }
+  #content { position: absolute; inset: 0; isolation: isolate; }
+
+  /* ---------- Branding & QR ---------- */
+  #brand { position: absolute; top: calc(var(--u)*3); left: calc(var(--u)*3.5); z-index: 20; pointer-events: none;
+           text-shadow: 0 2px 12px rgba(0,0,0,.7); transition: opacity .6s; }
+  #brand .t { font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: calc(var(--u)*5); color: var(--gold-2); line-height: 1; }
+  #brand .s { direction: ltr; unicode-bidi: isolate; font-size: calc(var(--u)*2); letter-spacing: .25em; text-transform: uppercase; opacity: .85; margin-top: calc(var(--u)*.8); }
+  #qrbox { position: absolute; right: calc(var(--u)*3); bottom: calc(var(--u)*3); z-index: 20; background: #fff; color: #222;
+           border-radius: calc(var(--u)*2); padding: calc(var(--u)*1.4); text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,.45);
+           width: calc(var(--u)*21); transition: opacity .6s; }
+  #qrbox .q { width: calc(var(--u)*18.2); height: calc(var(--u)*18.2); margin: 0 auto; }
+  #qrbox .q img, #qrbox .q canvas { width: 100% !important; height: 100% !important; display: block; image-rendering: pixelated; }
+  #qrbox .c { font-size: calc(var(--u)*1.75); font-weight: 600; margin-top: calc(var(--u)*1); line-height: 1.25; }
+  .off { opacity: 0 !important; pointer-events: none; }
+  [dir=rtl] #qrbox .c, [dir=rtl] .cap, [dir=rtl] .wait p { font-family: 'Noto Kufi Arabic', Inter, sans-serif; }
+
+  /* ---------- Waiting (no photos yet) ---------- */
+  .wait { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; z-index: 5; }
+  .wait .orn { color: var(--gold); letter-spacing: .5em; font-size: calc(var(--u)*2.4); }
+  .wait h1 { font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: calc(var(--u)*10); color: var(--gold-2); margin: calc(var(--u)*2) 0 calc(var(--u)*1); line-height: 1; }
+  .wait .sub { direction: ltr; unicode-bidi: isolate; letter-spacing: .3em; text-transform: uppercase; font-size: calc(var(--u)*2.2); opacity: .8; }
+  .wait .bigqr { background: #fff; padding: calc(var(--u)*1.6); border-radius: calc(var(--u)*2); margin-top: calc(var(--u)*5); width: calc(var(--u)*30); height: calc(var(--u)*30); }
+  .wait .bigqr img, .wait .bigqr canvas { width: 100% !important; height: 100% !important; display: block; image-rendering: pixelated; }
+  .wait p { font-size: calc(var(--u)*3); margin: calc(var(--u)*3) 0 0; font-weight: 500; }
+
+  /* ---------- Slideshow / spotlight ---------- */
+  .slide { position: absolute; inset: 0; opacity: 0; transition: opacity 1.1s ease; overflow: hidden; }
+  .slide.in { opacity: 1; }
+  .slide .blur { position: absolute; inset: -6%; background-size: cover; background-position: center; filter: blur(calc(var(--u)*4)) brightness(.45) saturate(1.2); }
+  .slide .main { position: absolute; inset: calc(var(--u)*2.5); display: flex; align-items: center; justify-content: center; }
+  .slide .main img { max-width: 100%; max-height: 100%; object-fit: contain; box-shadow: 0 calc(var(--u)*1.5) calc(var(--u)*6) rgba(0,0,0,.6);
+                     border-radius: calc(var(--u)*.6); transform: scale(1); transition: transform 12s linear; }
+  .slide.in .main img { transform: scale(1.035); }
+  .slide.new .main img { animation: popin 1.2s cubic-bezier(.2,.9,.3,1.2) both; }
+  @keyframes popin { from { transform: scale(.82); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  .cap { position: absolute; left: 0; right: 0; bottom: 0; padding: calc(var(--u)*10) calc(var(--u)*26) calc(var(--u)*4.2); text-align: center;
+         background: linear-gradient(to top, rgba(0,0,0,.78), rgba(0,0,0,0)); }
+  .cap .n { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 600; font-size: calc(var(--u)*5); color: var(--gold-2); line-height: 1.1; }
+  .cap .m { font-size: calc(var(--u)*3); margin-top: calc(var(--u)*.8); line-height: 1.3; }
+  .badge { display: inline-block; background: var(--gold); color: #241a10; font-weight: 600; font-size: calc(var(--u)*2.1);
+           padding: calc(var(--u)*.6) calc(var(--u)*1.8); border-radius: 99px; margin-bottom: calc(var(--u)*1.4); letter-spacing: .05em; }
+
+  /* ---------- Mosaic ---------- */
+  .grid { position: absolute; inset: calc(var(--u)*1); display: grid; gap: calc(var(--u)*1); }
+  .tile { position: relative; overflow: hidden; border-radius: calc(var(--u)*.8); background: #1a1512; }
+  .tile .ph { position: absolute; inset: 0; opacity: 0; transition: opacity 1s ease; }
+  .tile .ph.in { opacity: 1; }
+  .tile .ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .tile .nm { position: absolute; left: calc(var(--u)*1); bottom: calc(var(--u)*1); background: rgba(0,0,0,.55); padding: calc(var(--u)*.4) calc(var(--u)*1.2);
+              border-radius: 99px; font-size: calc(var(--u)*1.8); font-weight: 500; max-width: 90%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tile.flash::after { content: ''; position: absolute; inset: 0; border: calc(var(--u)*.6) solid var(--gold); border-radius: inherit; animation: flash 2.5s ease forwards; }
+  .tile.qrt { background: #fff; color: #222; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4%; }
+  .tile.qrt .q { aspect-ratio: 1; height: 72%; max-width: 100%; }
+  .tile.qrt .q img, .tile.qrt .q canvas { width: 100% !important; height: 100% !important; display: block; image-rendering: pixelated; }
+  .tile.qrt .c { font-weight: 600; font-size: calc(var(--u)*2); margin-top: 4%; line-height: 1.2; }
+  @keyframes flash { 0%,60% { opacity: 1; } 100% { opacity: 0; } }
+
+  /* ---------- Pop-up for new photos (mosaic / polaroid) ---------- */
+  .pop { position: absolute; inset: 0; z-index: 15; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.6);
+         opacity: 0; transition: opacity .7s; }
+  .pop.in { opacity: 1; }
+  .pop .card { transform: scale(.7) rotate(-3deg); transition: transform .9s cubic-bezier(.2,.9,.3,1.25); }
+  .pop.in .card { transform: scale(1) rotate(-1.5deg); }
+
+  /* ---------- Polaroid ---------- */
+  .card { position: absolute; background: #fbfaf6; padding: calc(var(--u)*1.3) calc(var(--u)*1.3) 0; border-radius: calc(var(--u)*.4);
+          box-shadow: 0 calc(var(--u)*1.2) calc(var(--u)*4) rgba(0,0,0,.55); color: #2a2420; }
+  .pop .card { position: relative; }
+  .card img { display: block; object-fit: cover; background: #ddd; }
+  .card .w { font-family: Caveat, cursive; font-weight: 600; text-align: center; line-height: 1.1; padding: calc(var(--u)*1) calc(var(--u)*1) calc(var(--u)*1.4);
+             overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .board .card { transition: transform 1.1s cubic-bezier(.2,.9,.3,1.15), opacity 1s; opacity: 0; }
+  .board .card.in { opacity: 1; }
+  .board .card.out { opacity: 0; }
+  [dir=rtl] .card .w { font-family: 'Noto Kufi Arabic', Caveat, sans-serif; font-weight: 400; }
+
+  /* ---------- Overlay (on top of the live camera in OBS) ---------- */
+  .ov { position: absolute; z-index: 15; transition: transform 1s cubic-bezier(.2,.9,.3,1.1), opacity .8s; opacity: 0; }
+  .ov.in { opacity: 1; transform: translate(0,0) rotate(var(--rot)) !important; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="content"></div>
+  <div id="brand" class="off"><div class="t"></div><div class="s"></div></div>
+  <div id="qrbox" class="off"><div class="q"></div><div class="c"></div></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+<script>
+// ------------------------------------------------------------
+// Screen page for OBS (Browser Source). Options in the URL:
+//   e=slug        event (required, unless demo=1)
+//   mode=         spotlight | slideshow | mosaic | polaroid | overlay  (default: set from the moderator page)
+//   t=7           seconds per photo (slideshow / spotlight)
+//   lang=fr       fr | en | ar for the texts on screen
+//   qr=0|1        hide/show the QR code (default: moderator page setting; hidden in overlay)
+//   title=0       hide the event title
+//   bg=transparent | dark | 112233   background (overlay is transparent by default)
+//   corner=br     overlay corner: br | bl | tr | tl
+//   tiles=12      max photos in the mosaic
+//   demo=1        sample photos, no Supabase needed (to test OBS and the LED screen)
+// ------------------------------------------------------------
+const P = (k, d) => PW.param(k, d);
+const DEMO = P('demo') === '1';
+const slug = (P('e', DEMO ? 'demo' : '') || '').toLowerCase();
+const MODE_LOCK = P('mode');
+const DUR = Math.max(3, +P('t', 7)) * 1000;
+const NEW_DUR = Math.max(DUR, 10000);
+const LANG = ['fr', 'en', 'ar'].includes(P('lang')) ? P('lang') : 'fr';
+const TX = {
+  scan: { fr: 'Scannez et partagez vos photos', en: 'Scan to share your photos', ar: 'امسح الرمز وشارك صورك' },
+  soon: { fr: 'Vos photos apparaîtront ici', en: 'Your photos will appear here', ar: 'ستظهر صوركم هنا' },
+  new: { fr: '✨ Nouvelle photo', en: '✨ New photo', ar: '✨ صورة جديدة' }
+};
+const tx = (k) => TX[k][LANG];
+document.documentElement.lang = LANG;
+document.documentElement.dir = LANG === 'ar' ? 'rtl' : 'ltr';
+
+const $ = (s) => document.querySelector(s);
+const content = $('#content');
+let event = null, mode = null;
+let photos = [], byId = new Map(), newQ = [], cursor = 0, loaded = false;
+let timers = [], runner = null, started = false;
+const later = (fn, ms) => { const id = setTimeout(fn, ms); timers.push(id); return id; };
+const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
+
+// ---------- Photo helpers ----------
+const src = (p) => p.url || PW.publicUrl(p.path);
+const cache = new Map();
+function getImg(p) {
+  const url = src(p);
+  if (cache.has(url)) { const v = cache.get(url); cache.delete(url); cache.set(url, v); return v; }
+  const pr = new Promise((res, rej) => {
+    const i = new Image(); i.decoding = 'async';
+    // decode() can stall on a hidden page, so never wait more than 1.5 s for it
+    i.onload = () => Promise.race([i.decode ? i.decode().catch(() => {}) : null, new Promise((r) => setTimeout(r, 1500))]).then(() => res(i));
+    i.onerror = () => { cache.delete(url); rej(new Error('img')); };
+    i.src = url;
+  });
+  cache.set(url, pr);
+  while (cache.size > 16) cache.delete(cache.keys().next().value); // keep memory low
+  return pr;
+}
+const isPortrait = (p) => p.width && p.height ? p.height > p.width : false;
+const ratio = (p) => (p.width && p.height ? p.width / p.height : 4 / 3);
+
+function nextRotation(skip) {
+  if (!photos.length) return null;
+  for (let k = 0; k < photos.length; k++) {
+    if (cursor >= photos.length) cursor = 0;
+    const p = photos[cursor++];
+    if (!skip || !skip.has(p.id) || k === photos.length - 1) return p;
+  }
+  return null;
+}
+function nextNew() {
+  while (newQ.length) { const p = byId.get(newQ.shift()); if (p) return p; }
+  return null;
+}
+function next() {
+  const p = nextNew(); if (p) return { p, isNew: true };
+  const r = nextRotation(); return r ? { p: r, isNew: false } : null;
+}
+// Clears the screen but keeps a running "new photo" pop-up
+function clearKeepPop() { [...content.children].forEach((c) => !c.classList.contains('pop') && c.remove()); }
+function preloadAhead() {
+  const ids = newQ.slice(0, 2).map((id) => byId.get(id)).filter(Boolean);
+  for (let k = 0; ids.length < 3 && k < Math.min(3, photos.length); k++) ids.push(photos[(cursor + k) % photos.length]);
+  ids.forEach((p) => getImg(p).catch(() => {}));
+}
+
+function captionHTML(p, isNew) {
+  if (!p.guest_name && !p.message && !isNew) return '';
+  return `<div class="cap">${isNew ? `<div class="badge">${tx('new')}</div>` : ''}
+    ${p.guest_name ? `<div class="n">${PW.esc(p.guest_name)}</div>` : ''}
+    ${p.message ? `<div class="m">${PW.esc(p.message)}</div>` : ''}</div>`;
+}
+
+// ---------- Waiting screen ----------
+function showWaiting() {
+  if (mode === 'overlay' || content.querySelector('.wait')) return;
+  content.innerHTML = '';
+  const w = document.createElement('div'); w.className = 'wait';
+  w.innerHTML = `<div class="orn">✦ ✦ ✦</div><h1>${PW.esc(event.title)}</h1>
+    ${event.subtitle ? `<div class="sub">${PW.esc(event.subtitle)}</div>` : ''}
+    ${qrOn() ? `<div class="bigqr"></div><p>${tx('scan')}</p>` : `<p>${tx('soon')}</p>`}`;
+  content.appendChild(w);
+  if (qrOn()) PW.qr(w.querySelector('.bigqr'), PW.guestUrl(slug), 512);
+  chrome();
+}
+const waiting = () => !!content.querySelector('.wait');
+
+// ---------- Mode: slideshow & spotlight ----------
+function runSlides(emphasis) {
+  let timer = null, shownAt = 0, current = null;
+  async function step() {
+    clearTimeout(timer);
+    const n = next();
+    if (!n) { showWaiting(); timer = later(step, 2000); return; }
+    try { await getImg(n.p); } catch (e) { timer = later(step, 300); return; }
+    if (runner !== api) return;
+    const isNew = emphasis && n.isNew;
+    const el = document.createElement('div');
+    el.className = 'slide' + (isNew ? ' new' : '');
+    el.dataset.id = n.p.id;
+    el.innerHTML = `<div class="blur" style="background-image:url('${src(n.p)}')"></div>
+      <div class="main"><img src="${src(n.p)}" alt=""></div>${captionHTML(n.p, isNew)}`;
+    content.querySelectorAll('.wait').forEach((w) => w.remove());
+    const old = [...content.children];
+    content.appendChild(el);
+    requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('in')));
+    setTimeout(() => old.forEach((o) => o.remove()), 1300);
+    current = n.p.id; shownAt = Date.now(); chrome();
+    preloadAhead();
+    timer = later(step, isNew ? NEW_DUR : DUR);
+  }
+  const api = {
+    wake(force) {
+      if (waiting() || force || (emphasis && Date.now() - shownAt > 2500)) step();
+    },
+    removed(ids) { if (ids.includes(current)) step(); }
+  };
+  runner = api; step();
+  return api;
+}
+
+// ---------- Pop-up used by mosaic & polaroid for new photos ----------
+function cardHTML(p, h) {
+  const w = Math.round(h * Math.min(1.6, Math.max(0.62, ratio(p))));
+  const label = [p.guest_name, p.message].filter(Boolean).join(' · ');
+  return { w, html: `<img src="${src(p)}" alt="" style="width:${w}px;height:${h}px">
+    <div class="w" style="width:${w}px;font-size:${Math.max(14, Math.round(h * 0.085))}px">${PW.esc(label) || '&nbsp;'}</div>` };
+}
+async function popNew(p) {
+  try { await getImg(p); } catch (e) { return; }
+  const h = Math.round(Math.min(innerHeight * 0.68, innerWidth * 0.5 / Math.max(.62, Math.min(1.6, ratio(p)))));
+  const c = cardHTML(p, h);
+  const el = document.createElement('div'); el.className = 'pop'; el.dataset.id = p.id;
+  el.innerHTML = `<div style="text-align:center"><div class="badge">${tx('new')}</div><div class="card">${c.html}</div></div>`;
+  content.appendChild(el);
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('in')));
+  await new Promise((r) => later(r, 6500));
+  el.classList.remove('in');
+  setTimeout(() => el.remove(), 800);
+}
+
+// ---------- Mode: mosaic ----------
+function runMosaic() {
+  const maxTiles = Math.max(1, Math.min(30, +P('tiles', 12)));
+  let grid = null, tiles = [], popping = false, lastTile = -1;
+  function bestGrid(n) {
+    const asp = innerWidth / innerHeight; let best = [1, 1], score = -1;
+    for (let c = 1; c <= 8; c++) for (let r = 1; r <= 6; r++) {
+      const cells = c * r; if (cells > Math.min(n, maxTiles)) continue;
+      const tileAsp = asp * r / c; const s = cells * 10 - Math.abs(Math.log(tileAsp / 1.33)) * 6;
+      if (s > score) { score = s; best = [c, r]; }
+    }
+    return best;
+  }
+  function build() {
+    const qr = qrOn();
+    const [c, r] = bestGrid(photos.length + (qr ? 1 : 0));
+    const key = c + 'x' + r + (qr ? 'q' : '');
+    if (grid && grid.dataset.k === key && grid.isConnected) return;
+    clearKeepPop();
+    grid = document.createElement('div'); grid.className = 'grid'; grid.dataset.k = key;
+    grid.style.gridTemplateColumns = `repeat(${c},1fr)`; grid.style.gridTemplateRows = `repeat(${r},1fr)`;
+    tiles = [];
+    for (let i = 0; i < c * r - (qr ? 1 : 0); i++) { const t = document.createElement('div'); t.className = 'tile'; grid.appendChild(t); tiles.push(t); }
+    if (qr) {
+      const q = document.createElement('div'); q.className = 'tile qrt';
+      q.innerHTML = `<div class="q"></div><div class="c">${tx('scan')}</div>`;
+      grid.appendChild(q); PW.qr(q.querySelector('.q'), PW.guestUrl(slug), 512);
+    }
+    content.prepend(grid);
+    const used = new Set(); tiles.forEach((t) => fill(t, nextRotation(used), used));
+  }
+  function visible() { return new Set(tiles.map((t) => t.dataset.id).filter(Boolean)); }
+  async function fill(t, p, used, flash) {
+    if (!p) return; if (used) used.add(p.id);
+    t.dataset.id = p.id;
+    try { await getImg(p); } catch (e) { return; }
+    const ph = document.createElement('div'); ph.className = 'ph';
+    ph.innerHTML = `<img src="${src(p)}" alt="">${p.guest_name ? `<div class="nm">${PW.esc(p.guest_name)}</div>` : ''}`;
+    const old = [...t.querySelectorAll('.ph')];
+    t.appendChild(ph);
+    requestAnimationFrame(() => requestAnimationFrame(() => ph.classList.add('in')));
+    setTimeout(() => old.forEach((o) => o.remove()), 1100);
+    if (flash) { t.classList.remove('flash'); void t.offsetWidth; t.classList.add('flash'); }
+  }
+  function swap() {
+    if (!photos.length) { grid = null; showWaiting(); later(swap, 2000); return; }
+    if (waiting() || !grid) { grid = null; build(); chrome(); }
+    else build();
+    if (photos.length > tiles.length || tiles.some((t) => !t.dataset.id)) {
+      let i = Math.floor(Math.random() * tiles.length);
+      const empty = tiles.findIndex((t) => !t.dataset.id);
+      if (empty >= 0) i = empty; else if (i === lastTile) i = (i + 1) % tiles.length;
+      lastTile = i;
+      fill(tiles[i], nextRotation(visible()));
+    }
+    preloadAhead();
+    later(swap, 3200);
+  }
+  async function pops() {
+    if (popping) return; popping = true;
+    let p;
+    while (runner === api && (p = nextNew())) {
+      if (waiting() || !grid) { grid = null; build(); chrome(); }
+      await popNew(p);
+      if (runner !== api) break;
+      build();
+      const i = Math.floor(Math.random() * tiles.length);
+      fill(tiles[i], p, null, true);
+    }
+    popping = false;
+  }
+  const api = {
+    wake() { pops(); },
+    refresh() { if (grid) { grid = null; build(); } },
+    removed(ids) {
+      grid = null; build();
+      content.querySelectorAll('.pop').forEach((el) => ids.includes(el.dataset.id) && el.remove());
+    }
+  };
+  runner = api; swap(); pops();
+  return api;
+}
+
+// ---------- Mode: polaroid ----------
+function runPolaroid() {
+  const asp = innerWidth / innerHeight;
+  const cols = Math.max(2, Math.round(asp * 2.2)), rows = asp > 2.6 ? 1 : 2;
+  let board = null, slots = [], popping = false, top = 0, areaH = innerHeight;
+  function build() {
+    clearKeepPop();
+    board = document.createElement('div'); board.className = 'board'; board.style.cssText = 'position:absolute;inset:0';
+    content.prepend(board);
+    slots = [];
+    const vmin = Math.min(innerWidth, innerHeight) / 100;
+    top = P('title') !== '0' ? Math.round(vmin * 13) : 0; areaH = innerHeight - top;
+    const qr = qrOn();
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++)
+      if (!(qr && c === cols - 1 && r === rows - 1)) slots.push({ c, r, el: null, at: 0 });
+    slots.sort(() => Math.random() - 0.5);
+  }
+  async function place(p) {
+    try { await getImg(p); } catch (e) { return; }
+    if (runner !== api) return;
+    if (!board || waiting()) { build(); chrome(); }
+    const s = slots.reduce((a, b) => (a.at <= b.at ? a : b));
+    const cw = innerWidth / cols, ch = areaH / rows;
+    const h = Math.round(Math.min(ch * 0.66, (cw * 0.84) / Math.min(1.6, Math.max(.62, ratio(p)))));
+    const c = cardHTML(p, h);
+    const el = document.createElement('div'); el.className = 'card'; el.dataset.id = p.id;
+    el.innerHTML = c.html;
+    const jx = (Math.random() - .5) * cw * 0.12, jy = (Math.random() - .5) * ch * 0.1;
+    const x = s.c * cw + cw / 2 - (c.w + innerHeight * 0.026) / 2 + jx;
+    const y = top + s.r * ch + ch / 2 - (h * 1.2) / 2 + jy;
+    const rot = (Math.random() - .5) * 14;
+    el.style.left = x + 'px'; el.style.top = y + 'px';
+    el.style.transform = `translateY(-${innerHeight * 0.25}px) rotate(${rot * 2}deg) scale(1.25)`;
+    el.style.zIndex = 1 + Math.floor(Date.now() / 1000) % 100000;
+    board.appendChild(el);
+    if (s.el) { const o = s.el; o.classList.add('out'); setTimeout(() => o.remove(), 1000); }
+    s.el = el; s.at = Date.now();
+    requestAnimationFrame(() => requestAnimationFrame(() => { el.classList.add('in'); el.style.transform = `rotate(${rot}deg)`; }));
+  }
+  function tick() {
+    if (!photos.length) { board = null; showWaiting(); later(tick, 2000); return; }
+    if (!popping) {
+      const onBoard = new Set(slots.map((s) => s.el && s.el.dataset.id).filter(Boolean));
+      const p = nextRotation(onBoard);
+      if (p) place(p);
+    }
+    preloadAhead();
+    later(tick, board && slots.some((s) => !s.el) ? 900 : 4500);
+  }
+  async function pops() {
+    if (popping) return; popping = true;
+    let p;
+    while (runner === api && (p = nextNew())) {
+      if (!board || waiting()) { build(); chrome(); }
+      await popNew(p);
+      if (runner === api) await place(p);
+    }
+    popping = false;
+  }
+  const api = {
+    wake() { pops(); },
+    refresh() { build(); },
+    removed(ids) {
+      slots.forEach((s) => { if (s.el && ids.includes(s.el.dataset.id)) { s.el.remove(); s.el = null; s.at = 0; } });
+      content.querySelectorAll('.pop').forEach((el) => ids.includes(el.dataset.id) && el.remove());
+    }
+  };
+  runner = api; build(); tick(); pops();
+  return api;
+}
+
+// ---------- Mode: overlay (transparent, on top of the live camera) ----------
+function runOverlay() {
+  const corner = ['br', 'bl', 'tr', 'tl'].includes(P('corner')) ? P('corner') : 'br';
+  const loopS = +P('loop', 0);
+  let busy = false, lastShow = Date.now(), current = null, hideNow = null;
+  content.innerHTML = '';
+  async function show(p) {
+    try { await getImg(p); } catch (e) { return; }
+    const h = Math.round(Math.min(innerHeight * 0.42, innerWidth * 0.28 / Math.min(1.6, Math.max(.62, ratio(p)))));
+    const c = cardHTML(p, h);
+    const el = document.createElement('div'); el.className = 'card ov'; el.dataset.id = p.id;
+    el.innerHTML = c.html;
+    const m = Math.round(innerHeight * 0.05);
+    el.style[corner[0] === 't' ? 'top' : 'bottom'] = m + 'px';
+    el.style[corner[1] === 'l' ? 'left' : 'right'] = m + 'px';
+    const rot = (corner[1] === 'l' ? 1 : -1) * (2 + Math.random() * 3);
+    el.style.setProperty('--rot', rot + 'deg');
+    el.style.transform = `translateX(${corner[1] === 'l' ? '-' : ''}${c.w + m * 3}px) rotate(${rot * 3}deg)`;
+    content.appendChild(el);
+    current = p.id;
+    requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('in')));
+    await new Promise((r) => { hideNow = r; later(r, NEW_DUR); });
+    el.classList.remove('in');
+    await new Promise((r) => later(r, 1000));
+    el.remove(); current = null; lastShow = Date.now();
+  }
+  async function loop() {
+    if (busy) return; busy = true;
+    let p;
+    while (runner === api && (p = nextNew())) await show(p);
+    busy = false;
+  }
+  function idle() {
+    if (loopS > 0 && !busy && photos.length && Date.now() - lastShow > loopS * 1000) {
+      const p = photos[Math.floor(Math.random() * photos.length)];
+      busy = true; show(p).then(() => { busy = false; loop(); });
+    }
+    later(idle, 1000);
+  }
+  const api = { wake() { loop(); }, removed(ids) { if (ids.includes(current) && hideNow) hideNow(); } };
+  runner = api; loop(); idle();
+  return api;
+}
+
+// ---------- Screen chrome (title, QR, background) ----------
+function qrOn() {
+  const q = P('qr');
+  if (q === '0') return false; if (q === '1') return true;
+  return mode !== 'overlay' && (!event || event.show_qr !== false);
+}
+function chrome() {
+  const b = $('#brand'), q = $('#qrbox');
+  const showTitle = P('title') !== '0' && mode !== 'overlay' && !waiting() && mode !== 'mosaic';
+  b.querySelector('.t').textContent = event ? event.title : '';
+  b.querySelector('.s').textContent = event && event.subtitle ? event.subtitle : '';
+  b.classList.toggle('off', !showTitle);
+  q.classList.toggle('off', !qrOn() || waiting() || mode === 'mosaic');
+  const bg = P('bg', mode === 'overlay' ? 'transparent' : 'dark');
+  document.body.classList.toggle('transparent', bg === 'transparent');
+  document.body.classList.toggle('dark-deco', bg === 'dark' && mode === 'polaroid');
+  document.body.style.background = /^[0-9a-f]{6}$/i.test(bg) ? '#' + bg : '';
+}
+let qrText = '';
+function drawSmallQR() {
+  const url = PW.guestUrl(slug);
+  if (qrText === url) return; qrText = url;
+  PW.qr($('#qrbox .q'), url, 256);
+  $('#qrbox .c').textContent = tx('scan');
+}
+
+function setMode(m) {
+  if (!['spotlight', 'slideshow', 'mosaic', 'polaroid', 'overlay'].includes(m)) m = 'spotlight';
+  if (m === mode && runner) return;
+  mode = m; clearTimers(); runner = null; content.innerHTML = '';
+  chrome();
+  ({ spotlight: () => runSlides(true), slideshow: () => runSlides(false), mosaic: runMosaic,
+     polaroid: runPolaroid, overlay: runOverlay })[m]();
+}
+
+// ---------- Data ----------
+function syncList(list, markNew) {
+  const ids = new Set(list.map((p) => p.id));
+  const removed = photos.filter((p) => !ids.has(p.id)).map((p) => p.id);
+  const added = list.filter((p) => !byId.has(p.id));
+  photos = list; byId = new Map(list.map((p) => [p.id, p]));
+  newQ = newQ.filter((id) => ids.has(id));
+  if (markNew) added.forEach((p) => {
+    if (!newQ.includes(p.id) && Date.now() - new Date(p.approved_at || 0).getTime() < 5 * 60 * 1000) newQ.push(p.id);
+  });
+  if (removed.length && runner && runner.removed) runner.removed(removed);
+  if (added.length && runner) runner.wake();
+}
+function addOne(p) {
+  if (!p || p.status !== 'approved' || byId.has(p.id)) return;
+  photos.push(p); byId.set(p.id, p); newQ.push(p.id);
+  if (runner) runner.wake();
+}
+function spotlight(id) {
+  const go = () => { newQ = [id, ...newQ.filter((x) => x !== id)]; if (runner) runner.wake(true); };
+  if (byId.has(id)) go(); else fetchAll().then(() => byId.has(id) && go());
+}
+function applyEvent(ev) {
+  const prev = event; event = ev;
+  document.title = `${ev.title} · Photo Wall`;
+  drawSmallQR();
+  if (started && !MODE_LOCK && (!prev || prev.mode !== ev.mode)) setMode(ev.mode);
+  else {
+    chrome();
+    if (prev && prev.show_qr !== ev.show_qr && runner && runner.refresh) runner.refresh();
+  }
+  if (prev && ev.rev !== prev.rev) fetchAll();
+  if (prev && ev.spotlight_id && ev.spotlight_at && ev.spotlight_at !== prev.spotlight_at) spotlight(ev.spotlight_id);
+  if (prev && waiting()) { content.querySelectorAll('.wait').forEach((w) => w.remove()); showWaiting(); }
+}
+
+let sb = null;
+async function fetchAll() {
+  const all = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await sb.from('photos')
+      .select('id,path,guest_name,message,width,height,approved_at,status')
+      .eq('event_slug', slug).eq('status', 'approved')
+      .order('approved_at', { ascending: true }).range(from, from + 999);
+    if (error) { console.warn(error); return; }
+    all.push(...data);
+    if (data.length < 1000) break;
+  }
+  syncList(all, loaded); loaded = true;
+}
+async function fetchEvent() {
+  const { data, error } = await sb.from('events').select('*').eq('slug', slug).maybeSingle();
+  if (!error && data) applyEvent(data);
+  return data;
+}
+
+async function initLive() {
+  sb = PW.client({ auth: { persistSession: false, autoRefreshToken: false } });
+  const ev = await fetchEvent();
+  if (!ev) { content.innerHTML = `<div class="wait"><p>Event "${PW.esc(slug)}" not found.</p></div>`; return; }
+  await fetchAll();
+  started = true; setMode(MODE_LOCK || event.mode);
+  sb.channel('screen-' + slug)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'photos', filter: `event_slug=eq.${slug}` },
+        (pl) => pl.new && addOne(pl.new))
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'events', filter: `slug=eq.${slug}` },
+        (pl) => pl.new && applyEvent(pl.new))
+    .subscribe();
+  setInterval(() => { fetchEvent(); fetchAll(); }, 30000); // safety net if the connection drops
+}
+
+// ---------- Demo (no Supabase) ----------
+function demoPhoto(i) {
+  const portrait = i % 3 !== 0;
+  const w = portrait ? 720 : 1080, h = portrait ? 1080 : 720;
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d');
+  const hue = (i * 47) % 360;
+  const grad = g.createLinearGradient(0, 0, w, h);
+  grad.addColorStop(0, `hsl(${hue},55%,62%)`); grad.addColorStop(1, `hsl(${(hue + 60) % 360},60%,30%)`);
+  g.fillStyle = grad; g.fillRect(0, 0, w, h);
+  for (let k = 0; k < 7; k++) {
+    g.fillStyle = `hsla(${(hue + k * 30) % 360},80%,85%,.25)`;
+    g.beginPath(); g.arc((k * 173 + i * 61) % w, (k * 251 + i * 37) % h, 60 + k * 25, 0, 7); g.fill();
+  }
+  g.fillStyle = 'rgba(255,255,255,.92)'; g.font = `600 ${Math.round(h / 7)}px Inter, sans-serif`;
+  g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('Photo ' + (i + 1), w / 2, h / 2);
+  const names = ['Yasmine', 'Karim', 'Leila & Omar', 'Tata Samia', 'Mehdi', 'Ines', 'Sami', '', 'Rania', 'Youssef'];
+  const msgs = ['Félicitations ! ❤️', 'Mabrouk 🎉', '', 'Beaucoup de bonheur à vous deux', '', 'Best wedding ever!', '', 'Love you both'];
+  return { id: 'demo-' + i, url: c.toDataURL('image/jpeg', 0.85), width: w, height: h,
+           guest_name: names[i % names.length] || null, message: msgs[i % msgs.length] || null,
+           approved_at: new Date().toISOString(), status: 'approved' };
+}
+function initDemo() {
+  const n = Math.max(0, +P('count', 18));
+  applyEvent({ slug, title: 'Amine & Sarra', subtitle: '12 · 09 · 2026', mode: MODE_LOCK || 'spotlight', show_qr: true, rev: 0 });
+  syncList(Array.from({ length: n }, (_, i) => demoPhoto(i)), false);
+  started = true; setMode(MODE_LOCK || event.mode);
+  let k = n;
+  const every = +P('every', 12);
+  if (every > 0) setInterval(() => addOne(demoPhoto(k++)), every * 1000);
+}
+
+// ---------- Start ----------
+if (DEMO) initDemo();
+else if (!PW.configured) document.body.innerHTML = PW.setupMessage;
+else if (!slug) content.innerHTML = '<div class="wait"><p>Add ?e=your-event to the link.</p></div>';
+else initLive();
+</script>
+</body>
+</html>
