@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#121212">
+<meta name="robots" content="noindex">
+<title>Photo Wall · Moderator</title>
+<style>
+  :root { --bg: #111214; --card: #1b1d21; --card2: #23262b; --line: #31353c; --text: #eceef1; --muted: #9aa1ab;
+          --gold: #d9b779; --ok: #4fbf87; --no: #e8705f; --blue: #6aa8ff; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 Inter, system-ui, -apple-system, Segoe UI, sans-serif; }
+  button, input, select { font: inherit; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 14px 14px 60px; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .grow { flex: 1; min-width: 0; }
+  h1 { font-size: 18px; margin: 0; }
+  h2 { font-size: 15px; margin: 0 0 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-top: 14px; }
+  .btn { background: var(--card2); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 9px 14px; cursor: pointer; white-space: nowrap; }
+  .btn:hover { border-color: #4a505a; }
+  .btn.pri { background: var(--gold); color: #241a10; border-color: var(--gold); font-weight: 600; }
+  .btn.ok { background: var(--ok); border-color: var(--ok); color: #06210f; font-weight: 600; }
+  .btn.no { background: transparent; border-color: var(--no); color: var(--no); }
+  .btn.sm { padding: 6px 10px; font-size: 13px; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  input[type=text], input[type=email], input[type=password], select {
+    background: #15171a; color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; width: 100%; }
+  label.l { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+  .muted { color: var(--muted); }
+  .err { color: var(--no); min-height: 1.4em; font-size: 14px; margin-top: 8px; }
+  .hidden { display: none !important; }
+  /* login */
+  .login { max-width: 360px; margin: 12vh auto 0; }
+  /* links */
+  .link { display: flex; gap: 8px; align-items: center; background: #15171a; border: 1px solid var(--line); border-radius: 10px; padding: 6px 6px 6px 10px; margin-top: 6px; }
+  .link code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: #cfd5dd; }
+  .setup { display: grid; grid-template-columns: 200px 1fr; gap: 16px; }
+  @media (max-width: 680px) { .setup { grid-template-columns: 1fr; } }
+  .qr { background: #fff; padding: 10px; border-radius: 12px; width: 200px; height: 200px; }
+  .qr img, .qr canvas { width: 100% !important; height: 100% !important; display: block; }
+  /* segmented & toggles */
+  .seg { display: flex; flex-wrap: wrap; gap: 6px; }
+  .seg button { background: #15171a; border: 1px solid var(--line); color: var(--text); padding: 8px 12px; border-radius: 99px; cursor: pointer; }
+  .seg button.on { background: var(--gold); border-color: var(--gold); color: #241a10; font-weight: 600; }
+  .tg { display: flex; align-items: center; gap: 10px; padding: 8px 0; cursor: pointer; user-select: none; }
+  .tg input { display: none; }
+  .tg .sw { width: 42px; height: 24px; border-radius: 99px; background: #3a3f47; position: relative; flex: none; transition: background .2s; }
+  .tg .sw::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .2s; }
+  .tg input:checked + .sw { background: var(--ok); }
+  .tg input:checked + .sw::after { left: 21px; }
+  .tgs { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0 18px; }
+  /* tabs & photos */
+  .tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--line); margin: 18px 0 12px; overflow-x: auto; }
+  .tabs button { background: none; border: 0; color: var(--muted); padding: 10px 12px; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; font-weight: 600; }
+  .tabs button.on { color: var(--text); border-bottom-color: var(--gold); }
+  .tabs .n { display: inline-block; min-width: 22px; padding: 0 6px; border-radius: 99px; background: var(--card2); color: var(--text); font-size: 12px; margin-left: 4px; }
+  .tabs button[data-tab=pending] .n.hot { background: var(--no); }
+  .photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 10px; }
+  .ph { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+  .ph .im { aspect-ratio: 1; background: #000; cursor: zoom-in; }
+  .ph .im img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ph .meta { padding: 8px 10px 4px; font-size: 13px; flex: 1; }
+  .ph .meta b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ph .meta span { color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .ph .meta i { color: #6f7680; font-style: normal; font-size: 12px; }
+  .ph .act { display: flex; gap: 6px; padding: 8px; }
+  .ph .act .btn { flex: 1; padding: 8px 4px; font-size: 13px; }
+  .empty { text-align: center; color: var(--muted); padding: 40px 10px; }
+  /* viewer */
+  .viewer { position: fixed; inset: 0; background: rgba(0,0,0,.92); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 20px; cursor: zoom-out; }
+  .viewer img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: #2c3138; border: 1px solid var(--line); padding: 10px 16px;
+           border-radius: 10px; z-index: 60; opacity: 0; transition: opacity .3s; pointer-events: none; }
+  .toast.on { opacity: 1; }
+  dialog { background: var(--card); color: var(--text); border: 1px solid var(--line); border-radius: 14px; padding: 18px; width: min(420px, 92vw); }
+  dialog::backdrop { background: rgba(0,0,0,.6); }
+</style>
+</head>
+<body>
+<div class="wrap" id="root"></div>
+<div class="toast" id="toast"></div>
+
+<dialog id="newDlg">
+  <h1>New event</h1>
+  <label class="l">Names on the screen</label>
+  <input type="text" id="nTitle" placeholder="Amine & Sarra" maxlength="60">
+  <label class="l">Date or line under the names (optional)</label>
+  <input type="text" id="nSub" placeholder="12 · 09 · 2026" maxlength="60">
+  <label class="l">Link name (letters, numbers and -)</label>
+  <input type="text" id="nSlug" placeholder="amine-sarra" maxlength="40">
+  <div class="err" id="nErr"></div>
+  <div class="row" style="justify-content:flex-end;margin-top:8px">
+    <button class="btn" id="nCancel">Cancel</button><button class="btn pri" id="nCreate">Create</button>
+  </div>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+<script>
+const root = document.getElementById('root');
+const MODES = [['spotlight', 'Spotlight'], ['slideshow', 'Slideshow'], ['mosaic', 'Mosaic'], ['polaroid', 'Polaroid'], ['overlay', 'Overlay (on camera)']];
+const store = { get: (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+                set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+let sb, events = [], ev = null, photos = [], tab = 'pending', channel = null, screenLang = store.get('pw_screen_lang') || 'fr';
+
+function toast(t) {
+  const el = document.getElementById('toast'); el.textContent = t; el.classList.add('on');
+  clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 2200);
+}
+const fmtTime = (d) => d ? new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
+// ---------- Login ----------
+function showLogin(msg) {
+  root.innerHTML = `<div class="login card">
+    <h1>Photo Wall · Moderator</h1>
+    <p class="muted" style="margin:6px 0 0">Sign in with the account added as admin in Supabase.</p>
+    <label class="l">Email</label><input type="email" id="em" autocomplete="username">
+    <label class="l">Password</label><input type="password" id="pw" autocomplete="current-password">
+    <div class="err" id="lerr">${PW.esc(msg || '')}</div>
+    <button class="btn pri" id="go" style="width:100%;margin-top:6px">Sign in</button></div>`;
+  const go = async () => {
+    const b = document.getElementById('go'); b.disabled = true;
+    const { error } = await sb.auth.signInWithPassword({
+      email: document.getElementById('em').value.trim(), password: document.getElementById('pw').value });
+    b.disabled = false;
+    if (error) { document.getElementById('lerr').textContent = error.message; return; }
+    start();
+  };
+  document.getElementById('go').onclick = go;
+  document.getElementById('pw').onkeydown = (e) => e.key === 'Enter' && go();
+}
+
+async function start() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return showLogin();
+  const { data: adm } = await sb.from('admins').select('user_id').eq('user_id', session.user.id).maybeSingle();
+  if (!adm) { await sb.auth.signOut(); return showLogin('This account is not an admin yet (README, step 4).'); }
+  await loadEvents();
+  const want = PW.param('e') || store.get('pw_event');
+  selectEvent(events.find((e) => e.slug === want) ? want : (events[0] && events[0].slug));
+}
+
+// ---------- Events ----------
+async function loadEvents() {
+  const { data, error } = await sb.from('events').select('*').order('created_at', { ascending: false });
+  if (error) { toast(error.message); return; }
+  events = data || [];
+}
+
+async function selectEvent(slug) {
+  ev = events.find((e) => e.slug === slug) || null;
+  if (ev) store.set('pw_event', ev.slug);
+  photos = [];
+  renderShell();
+  if (!ev) return;
+  await loadPhotos();
+  subscribe();
+}
+
+async function patchEvent(fields, msg) {
+  const { data, error } = await sb.from('events').update(fields).eq('slug', ev.slug).select().single();
+  if (error) { toast(error.message); return false; }
+  Object.assign(ev, data); if (msg) toast(msg);
+  return true;
+}
+
+function openNew() {
+  const d = document.getElementById('newDlg');
+  ['nTitle', 'nSub', 'nSlug'].forEach((id) => (document.getElementById(id).value = ''));
+  document.getElementById('nErr').textContent = '';
+  let touched = false;
+  document.getElementById('nSlug').oninput = () => (touched = true);
+  document.getElementById('nTitle').oninput = (e) => { if (!touched) document.getElementById('nSlug').value = PW.slugify(e.target.value); };
+  document.getElementById('nCancel').onclick = () => d.close();
+  document.getElementById('nCreate').onclick = async () => {
+    const title = document.getElementById('nTitle').value.trim();
+    const slug = PW.slugify(document.getElementById('nSlug').value);
+    const err = document.getElementById('nErr');
+    if (!title) { err.textContent = 'Write the names.'; return; }
+    if (slug.length < 2) { err.textContent = 'The link name needs at least 2 letters or numbers.'; return; }
+    const { error } = await sb.from('events').insert({ slug, title, subtitle: document.getElementById('nSub').value.trim() || null });
+    if (error) { err.textContent = /duplicate|unique/i.test(error.message) ? 'This link name is already used. Change it.' : error.message; return; }
+    d.close(); await loadEvents(); selectEvent(slug); toast('Event created');
+  };
+  d.showModal();
+}
+
+// ---------- Layout ----------
+function renderShell() {
+  root.innerHTML = `
+    <div class="row">
+      <h1 class="grow">📷 Photo Wall</h1>
+      <select id="evSel" style="width:auto;max-width:55vw">${events.map((e) =>
+        `<option value="${PW.esc(e.slug)}" ${ev && e.slug === ev.slug ? 'selected' : ''}>${PW.esc(e.title)}</option>`).join('')
+        || '<option>No event yet</option>'}</select>
+      <button class="btn pri" id="newBtn">+ New event</button>
+      <button class="btn sm" id="outBtn">Sign out</button>
+    </div>
+    <div id="body"></div>`;
+  document.getElementById('evSel').onchange = (e) => selectEvent(e.target.value);
+  document.getElementById('newBtn').onclick = openNew;
+  document.getElementById('outBtn').onclick = async () => { await sb.auth.signOut(); showLogin(); };
+  const body = document.getElementById('body');
+  if (!ev) { body.innerHTML = `<div class="card empty">Create your first event with <b>+ New event</b>.</div>`; return; }
+
+  body.innerHTML = `
+    <div class="card">
+      <h2>Live controls</h2>
+      <div class="seg" id="modes">${MODES.map(([m, l]) => `<button data-m="${m}" class="${ev.mode === m ? 'on' : ''}">${l}</button>`).join('')}</div>
+      <div class="tgs" style="margin-top:10px">
+        <label class="tg"><input type="checkbox" id="tAuto" ${ev.auto_approve ? 'checked' : ''}><span class="sw"></span>
+          <span>Auto-approve <span class="muted">(no moderation)</span></span></label>
+        <label class="tg"><input type="checkbox" id="tOpen" ${ev.open ? 'checked' : ''}><span class="sw"></span><span>Guests can upload</span></label>
+        <label class="tg"><input type="checkbox" id="tQr" ${ev.show_qr ? 'checked' : ''}><span class="sw"></span><span>QR code on the screen</span></label>
+      </div>
+    </div>
+
+    <div class="tabs" id="tabs"></div>
+    <div id="tabTools" class="row" style="margin-bottom:10px"></div>
+    <div class="photos" id="list"></div>
+
+    <div class="card" style="margin-top:26px">
+      <h2>Links & QR code</h2>
+      <div class="setup">
+        <div>
+          <div class="qr" id="qr"></div>
+          <button class="btn sm" id="qrDl" style="width:200px;margin-top:8px">Download QR (PNG)</button>
+        </div>
+        <div>
+          <div class="muted">Guests' page (the QR code opens this)</div>
+          <div class="link"><code id="lGuest"></code><button class="btn sm" data-copy="lGuest">Copy</button><a class="btn sm" id="oGuest" target="_blank">Open</a></div>
+          <div class="muted" style="margin-top:14px">OBS Browser Source · full screen (follows the mode chosen above)</div>
+          <div class="link"><code id="lScreen"></code><button class="btn sm" data-copy="lScreen">Copy</button><a class="btn sm" id="oScreen" target="_blank">Open</a></div>
+          <div class="muted" style="margin-top:14px">OBS Browser Source · overlay on the live camera (transparent, new photos in a corner)</div>
+          <div class="link"><code id="lOver"></code><button class="btn sm" data-copy="lOver">Copy</button></div>
+          <div class="row" style="margin-top:12px">
+            <span class="muted">Screen text language</span>
+            <select id="sLang" style="width:auto"><option value="fr">Français</option><option value="en">English</option><option value="ar">العربية</option></select>
+          </div>
+          <p class="muted" style="font-size:13px;margin:12px 0 0">In OBS: set the source width and height to your LED canvas size (e.g. 1920 × 1080),
+          and untick "Shutdown source when not visible". Add <code>&amp;demo=1</code> to a screen link to test with sample photos.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Event details</h2>
+      <div class="row" style="align-items:flex-end">
+        <div class="grow"><label class="l">Names</label><input type="text" id="eTitle" maxlength="60" value="${PW.esc(ev.title)}"></div>
+        <div class="grow"><label class="l">Date / second line</label><input type="text" id="eSub" maxlength="60" value="${PW.esc(ev.subtitle || '')}"></div>
+        <button class="btn" id="eSave">Save</button>
+      </div>
+    </div>`;
+
+  document.getElementById('modes').onclick = async (e) => {
+    const m = e.target.dataset && e.target.dataset.m; if (!m) return;
+    if (await patchEvent({ mode: m }, 'Screen mode: ' + MODES.find((x) => x[0] === m)[1]))
+      document.querySelectorAll('#modes button').forEach((b) => b.classList.toggle('on', b.dataset.m === m));
+  };
+  const tog = (id, field, on, off) => (document.getElementById(id).onchange = async (e) => {
+    if (!(await patchEvent({ [field]: e.target.checked }, e.target.checked ? on : off))) e.target.checked = !e.target.checked;
+  });
+  tog('tAuto', 'auto_approve', 'New photos go straight to the screen', 'New photos wait for your approval');
+  tog('tOpen', 'open', 'Uploads open', 'Uploads closed');
+  tog('tQr', 'show_qr', 'QR code shown', 'QR code hidden');
+  document.getElementById('eSave').onclick = () => patchEvent({
+    title: document.getElementById('eTitle').value.trim() || ev.title,
+    subtitle: document.getElementById('eSub').value.trim() || null }, 'Saved').then(async (ok) => {
+      if (ok) { await loadEvents(); const s = document.getElementById('evSel');
+        s.innerHTML = events.map((e) => `<option value="${PW.esc(e.slug)}" ${e.slug === ev.slug ? 'selected' : ''}>${PW.esc(e.title)}</option>`).join(''); }
+    });
+  const sl = document.getElementById('sLang'); sl.value = screenLang;
+  sl.onchange = () => { screenLang = sl.value; store.set('pw_screen_lang', screenLang); renderLinks(); };
+  root.querySelectorAll('[data-copy]').forEach((b) => (b.onclick = async () => {
+    const text = document.getElementById(b.dataset.copy).textContent;
+    try { await navigator.clipboard.writeText(text); toast('Link copied'); }
+    catch (e) { prompt('Copy this link:', text); }
+  }));
+  document.getElementById('qrDl').onclick = () => {
+    const holder = document.createElement('div'); PW.qr(holder, PW.guestUrl(ev.slug), 1024);
+    const c = holder.querySelector('canvas'); const a = document.createElement('a');
+    a.href = c.toDataURL('image/png'); a.download = `qr-${ev.slug}.png`; a.click();
+  };
+  renderLinks();
+  renderPhotos();
+}
+
+function renderLinks() {
+  const g = PW.guestUrl(ev.slug);
+  const s = PW.screenUrl(ev.slug, screenLang !== 'fr' ? `&lang=${screenLang}` : '');
+  const o = PW.screenUrl(ev.slug, `&mode=overlay${screenLang !== 'fr' ? `&lang=${screenLang}` : ''}`);
+  document.getElementById('lGuest').textContent = g; document.getElementById('oGuest').href = g;
+  document.getElementById('lScreen').textContent = s; document.getElementById('oScreen').href = s;
+  document.getElementById('lOver').textContent = o;
+  PW.qr(document.getElementById('qr'), g, 360);
+}
+
+// ---------- Photos ----------
+async function loadPhotos() {
+  if (!ev) return;
+  const slug = ev.slug, all = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await sb.from('photos').select('*').eq('event_slug', slug)
+      .order('created_at', { ascending: false }).range(from, from + 999);
+    if (error) { toast(error.message); return; }
+    all.push(...data); if (data.length < 1000) break;
+  }
+  if (!ev || ev.slug !== slug) return;
+  photos = all; renderPhotos();
+}
+let reloadT = null;
+const reloadSoon = () => { clearTimeout(reloadT); reloadT = setTimeout(loadPhotos, 400); };
+
+function subscribe() {
+  if (channel) sb.removeChannel(channel);
+  channel = sb.channel('admin-' + ev.slug)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'photos', filter: `event_slug=eq.${ev.slug}` }, reloadSoon)
+    .subscribe();
+}
+
+function renderPhotos() {
+  const tabsEl = document.getElementById('tabs'); if (!tabsEl) return;
+  const by = { pending: [], approved: [], rejected: [] };
+  photos.forEach((p) => by[p.status] && by[p.status].push(p));
+  by.approved.sort((a, b) => new Date(b.approved_at) - new Date(a.approved_at));
+  const np = by.pending.length;
+  document.title = (np ? `(${np}) ` : '') + 'Photo Wall · Moderator';
+  tabsEl.innerHTML = [['pending', 'To approve'], ['approved', 'On screen'], ['rejected', 'Rejected']].map(([k, l]) =>
+    `<button data-tab="${k}" class="${tab === k ? 'on' : ''}">${l}<span class="n ${k === 'pending' && np ? 'hot' : ''}">${by[k].length}</span></button>`).join('');
+  tabsEl.onclick = (e) => { const b = e.target.closest('button'); if (b) { tab = b.dataset.tab; renderPhotos(); } };
+
+  const tools = document.getElementById('tabTools');
+  tools.innerHTML = tab === 'pending' && np > 1 ? `<button class="btn ok" id="allOk">Approve all (${np})</button>`
+    : tab === 'approved' && by.approved.length ? `<button class="btn" id="zip">⬇ Download all photos (ZIP)</button><span class="muted" id="zipSt"></span>` : '';
+  const allOk = document.getElementById('allOk');
+  if (allOk) allOk.onclick = async () => {
+    allOk.disabled = true;
+    const { error } = await sb.from('photos').update({ status: 'approved' }).eq('event_slug', ev.slug).eq('status', 'pending');
+    if (error) toast(error.message); else { toast('All approved'); loadPhotos(); }
+  };
+  const zip = document.getElementById('zip'); if (zip) zip.onclick = () => downloadZip(by.approved.slice().reverse());
+
+  const list = by[tab];
+  const box = document.getElementById('list');
+  if (!list.length) {
+    box.innerHTML = `<div class="empty" style="grid-column:1/-1">${
+      tab === 'pending' ? (ev.auto_approve ? 'Auto-approve is on: new photos go straight to the screen.' : 'No photos waiting. New ones appear here automatically.')
+      : tab === 'approved' ? 'No photos on the screen yet.' : 'Nothing rejected.'}</div>`;
+    return;
+  }
+  box.innerHTML = list.map((p) => `<div class="ph" data-id="${p.id}">
+      <div class="im"><img loading="lazy" src="${PW.publicUrl(p.path)}" alt=""></div>
+      <div class="meta"><b>${PW.esc(p.guest_name || 'Guest')}</b>${p.message ? `<span>${PW.esc(p.message)}</span>` : ''}<i>${fmtTime(p.created_at)}</i></div>
+      <div class="act">${
+        tab === 'pending' ? `<button class="btn ok" data-a="approve">Approve</button><button class="btn no" data-a="reject">Reject</button>`
+        : tab === 'approved' ? `<button class="btn" data-a="show">⭐ Show now</button><button class="btn no" data-a="reject">Hide</button>`
+        : `<button class="btn" data-a="approve">Approve</button><button class="btn no" data-a="delete">Delete</button>`}</div></div>`).join('');
+  box.onclick = async (e) => {
+    const card = e.target.closest('.ph'); if (!card) return;
+    const p = photos.find((x) => x.id === card.dataset.id); if (!p) return;
+    if (e.target.closest('.im')) return view(p);
+    const a = e.target.dataset && e.target.dataset.a; if (!a) return;
+    e.target.disabled = true;
+    await act(a, p);
+    e.target.disabled = false;
+  };
+}
+
+async function act(a, p) {
+  let error;
+  if (a === 'approve' || a === 'reject') {
+    ({ error } = await sb.from('photos').update({ status: a === 'approve' ? 'approved' : 'rejected' }).eq('id', p.id));
+    if (!error) { p.status = a === 'approve' ? 'approved' : 'rejected'; if (a === 'approve') p.approved_at = new Date().toISOString(); renderPhotos(); }
+  } else if (a === 'show') {
+    await patchEvent({ spotlight_id: p.id, spotlight_at: new Date().toISOString() }, 'Showing on the screen now');
+    return;
+  } else if (a === 'delete') {
+    if (!confirm('Delete this photo for good?')) return;
+    await sb.storage.from('photos').remove([p.path]);
+    ({ error } = await sb.from('photos').delete().eq('id', p.id));
+    if (!error) { photos = photos.filter((x) => x.id !== p.id); renderPhotos(); }
+  }
+  if (error) toast(error.message);
+}
+
+function view(p) {
+  const v = document.createElement('div'); v.className = 'viewer';
+  v.innerHTML = `<img src="${PW.publicUrl(p.path)}" alt="">`;
+  v.onclick = () => v.remove(); document.body.appendChild(v);
+}
+
+async function downloadZip(list) {
+  const st = document.getElementById('zipSt'), btn = document.getElementById('zip');
+  btn.disabled = true;
+  const z = new JSZip(), folder = z.folder(ev.slug);
+  const lines = [];
+  for (let i = 0; i < list.length; i++) {
+    const p = list[i], n = String(i + 1).padStart(3, '0');
+    const name = `${n}${p.guest_name ? '_' + PW.slugify(p.guest_name) : ''}.jpg`;
+    st.textContent = ` ${i + 1} / ${list.length}`;
+    try { const r = await fetch(PW.publicUrl(p.path)); folder.file(name, await r.blob()); } catch (e) { continue; }
+    if (p.guest_name || p.message) lines.push(`${name}\t${p.guest_name || ''}\t${p.message || ''}`);
+  }
+  if (lines.length) folder.file('messages.txt', 'Photo\tName\tMessage\n' + lines.join('\n'));
+  st.textContent = ' Preparing ZIP…';
+  const blob = await z.generateAsync({ type: 'blob' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${ev.slug}-photos.zip`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+  st.textContent = ''; btn.disabled = false;
+}
+
+// ---------- Start ----------
+if (!PW.configured) root.innerHTML = PW.setupMessage;
+else {
+  sb = PW.client();
+  start();
+  setInterval(() => ev && loadPhotos(), 20000);
+}
+</script>
+</body>
+</html>
