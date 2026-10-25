@@ -6,6 +6,49 @@ Guests scan a QR code, send photos from their phone, you approve them, and they 
 
 No account needed for the preview. Change the style by adding `&mode=mosaic`, `&mode=polaroid`, `&mode=slideshow` or `&mode=overlay` to the link.
 
+## 🔗 Quick links
+
+**Event day**
+
+| What | Link |
+|---|---|
+| 🛠 **Moderator page** (sign in, create events, approve photos, get the QR code) | https://led-solutions.github.io/led-photo-wall/admin.html |
+| 📷 Guest page of an event (what the QR code opens) | `https://led-solutions.github.io/led-photo-wall/?e=EVENT-NAME` |
+| 🖥 Screen page for OBS (full screen) | `https://led-solutions.github.io/led-photo-wall/screen.html?e=EVENT-NAME` |
+| 🎥 Screen page for OBS (overlay on the live camera) | `https://led-solutions.github.io/led-photo-wall/screen.html?e=EVENT-NAME&mode=overlay` |
+
+Replace `EVENT-NAME` with the event's link name (e.g. `amine-sarra`). The moderator page shows these links ready to copy for each event.
+
+**Test & demo**
+
+| What | Link |
+|---|---|
+| Demo screen, sample photos, no account needed | https://led-solutions.github.io/led-photo-wall/screen.html?demo=1 |
+| Demo · mosaic | https://led-solutions.github.io/led-photo-wall/screen.html?demo=1&mode=mosaic |
+| Demo · polaroid | https://led-solutions.github.io/led-photo-wall/screen.html?demo=1&mode=polaroid |
+| Demo · overlay | https://led-solutions.github.io/led-photo-wall/screen.html?demo=1&mode=overlay |
+| Test event · guest page | https://led-solutions.github.io/led-photo-wall/?e=test-seif |
+| Test event · screen | https://led-solutions.github.io/led-photo-wall/screen.html?e=test-seif |
+
+**Supabase (backend, sign in with your Supabase account)**
+
+| What | Link |
+|---|---|
+| Project dashboard | https://supabase.com/dashboard/project/dwievewbplpylynnuszi |
+| Moderator accounts (Users) | https://supabase.com/dashboard/project/dwievewbplpylynnuszi/auth/users |
+| SQL Editor | https://supabase.com/dashboard/project/dwievewbplpylynnuszi/sql/new |
+| Photo storage | https://supabase.com/dashboard/project/dwievewbplpylynnuszi/storage/buckets/photos |
+| Tables (events, photos) | https://supabase.com/dashboard/project/dwievewbplpylynnuszi/editor |
+| Storage & usage | https://supabase.com/dashboard/project/dwievewbplpylynnuszi/settings/billing/usage |
+
+**This repository**
+
+| What | Link |
+|---|---|
+| Code | https://github.com/LED-solutions/led-photo-wall |
+| GitHub Pages settings | https://github.com/LED-solutions/led-photo-wall/settings/pages |
+
+
 ---
 
 ## How it works
