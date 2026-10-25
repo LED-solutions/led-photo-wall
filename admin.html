@@ -132,7 +132,7 @@ function showLogin(msg) {
     start();
   };
   document.getElementById('go').onclick = go;
-  document.getElementById('pw').onkeydown = (e) => e.key === 'Enter' && go();
+  document.getElementById('pw').onkeydown = (e) => { if (e.key === 'Enter') go(); };
 }
 
 async function start() {
