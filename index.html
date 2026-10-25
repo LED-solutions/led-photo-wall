@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14110f">
+<title>Share your photos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&family=Noto+Kufi+Arabic:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #14110f; --card: #1f1a17; --line: #3a312b; --text: #f3ede6; --muted: #b3a79b;
+    --gold: #d9b779; --gold-2: #f0d7a4; --ok: #7fc8a0; --err: #f08f7f;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); }
+  body {
+    font: 16px/1.5 Inter, system-ui, sans-serif; min-height: 100vh; min-height: 100dvh;
+    background: radial-gradient(120% 60% at 50% 0%, #2b211b 0%, var(--bg) 60%);
+  }
+  [dir=rtl] body, [dir=rtl] button, [dir=rtl] input, [dir=rtl] textarea { font-family: 'Noto Kufi Arabic', Inter, sans-serif; }
+  .wrap { max-width: 480px; margin: 0 auto; padding: 20px 16px 40px; }
+  .lang { display: flex; justify-content: flex-end; gap: 6px; }
+  .lang button { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 99px; padding: 4px 10px; font-size: 13px; cursor: pointer; }
+  .lang button.on { color: var(--bg); background: var(--gold); border-color: var(--gold); }
+  header { text-align: center; margin: 22px 0 26px; }
+  .orn { color: var(--gold); letter-spacing: .4em; font-size: 12px; }
+  h1 { font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 40px; line-height: 1.1; margin: 10px 0 6px; color: var(--gold-2); }
+  .sub { color: var(--muted); margin: 0; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 18px; }
+  .pick { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; width: 100%;
+          min-height: 150px; border: 1.5px dashed var(--gold); border-radius: 14px; color: var(--gold-2); cursor: pointer;
+          font-weight: 600; font-size: 18px; text-align: center; padding: 16px; }
+  .pick small { color: var(--muted); font-weight: 400; font-size: 13px; }
+  .pick .ico { font-size: 34px; line-height: 1; }
+  input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+  .thumbs:empty { display: none; }
+  .thumb { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: #000; }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb button { position: absolute; top: 4px; inset-inline-end: 4px; width: 26px; height: 26px; border-radius: 50%; border: 0;
+                  background: rgba(0,0,0,.65); color: #fff; font-size: 15px; line-height: 26px; padding: 0; cursor: pointer; }
+  .thumb .st { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(0,0,0,.55); font-size: 22px; }
+  label.f { display: block; font-size: 13px; color: var(--muted); margin: 16px 0 6px; }
+  input[type=text], textarea { width: 100%; background: #16120f; border: 1px solid var(--line); color: var(--text);
+                               border-radius: 10px; padding: 12px; font: inherit; }
+  textarea { resize: none; height: 78px; }
+  input:focus, textarea:focus { outline: 2px solid var(--gold); outline-offset: 0; border-color: transparent; }
+  .count { text-align: end; font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .send { width: 100%; margin-top: 18px; padding: 15px; border: 0; border-radius: 12px; font: 600 17px Inter, sans-serif;
+          background: linear-gradient(180deg, var(--gold-2), var(--gold)); color: #241a10; cursor: pointer; }
+  [dir=rtl] .send { font-family: 'Noto Kufi Arabic', sans-serif; }
+  .send:disabled { opacity: .45; cursor: default; }
+  .msg { margin-top: 12px; font-size: 14px; text-align: center; min-height: 1.5em; }
+  .msg.err { color: var(--err); }
+  .done { text-align: center; padding: 30px 18px; }
+  .done .big { font-size: 54px; }
+  .done h2 { font-family: 'Cormorant Garamond', serif; font-size: 32px; margin: 8px 0; color: var(--gold-2); }
+  [dir=rtl] .done h2, [dir=rtl] h1 { font-family: 'Noto Kufi Arabic', serif; }
+  .ghost { margin-top: 18px; background: none; border: 1px solid var(--gold); color: var(--gold-2); padding: 12px 20px; border-radius: 12px; font: inherit; cursor: pointer; }
+  .center { text-align: center; color: var(--muted); padding: 60px 10px; }
+  .foot { text-align: center; font-size: 12px; color: #6f645a; margin-top: 26px; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="lang" id="lang">
+    <button data-l="fr">FR</button><button data-l="en">EN</button><button data-l="ar">ع</button>
+  </div>
+  <div id="app"><div class="center" data-t="loading"></div></div>
+  <div class="foot" data-t="foot"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+<script>
+const T = {
+  en: { loading: 'Loading…', share: 'Share your photos', pick: 'Add photos', pickSub: 'Take a picture or choose from your gallery · up to 5',
+        name: 'Your name (optional)', namePh: 'e.g. Yasmine', msg: 'A message for the couple (optional)', msgPh: 'Congratulations! ❤️',
+        send: 'Send to the screen', sending: 'Sending {n}/{t}…', doneT: 'Thank you!', donePending: 'Your photos will appear on the screen once they are approved.',
+        doneAuto: 'Your photos will appear on the screen in a few seconds.', more: 'Send more photos', closed: 'Photo sharing is closed for this event. Thank you!',
+        notFound: 'This event was not found. Please scan the QR code again.', noEvent: 'Please scan the QR code shown at the event.',
+        tooMany: 'You can send up to 5 photos at a time.', badImg: 'This photo could not be read. Try another one or a screenshot of it.',
+        failed: 'Sending failed. Check your connection and try again.', foot: 'Photos are shown on the event screen' },
+  fr: { loading: 'Chargement…', share: 'Partagez vos photos', pick: 'Ajouter des photos', pickSub: 'Prenez une photo ou choisissez dans la galerie · 5 max',
+        name: 'Votre prénom (facultatif)', namePh: 'ex. Yasmine', msg: 'Un mot pour les mariés (facultatif)', msgPh: 'Félicitations ! ❤️',
+        send: 'Envoyer sur l’écran', sending: 'Envoi {n}/{t}…', doneT: 'Merci !', donePending: 'Vos photos apparaîtront sur l’écran après validation.',
+        doneAuto: 'Vos photos apparaîtront sur l’écran dans quelques secondes.', more: 'Envoyer d’autres photos', closed: 'Le partage de photos est terminé pour cet événement. Merci !',
+        notFound: 'Événement introuvable. Scannez à nouveau le QR code.', noEvent: 'Scannez le QR code affiché à l’événement.',
+        tooMany: 'Vous pouvez envoyer 5 photos à la fois.', badImg: 'Cette photo n’a pas pu être lue. Essayez-en une autre ou une capture d’écran.',
+        failed: 'Échec de l’envoi. Vérifiez votre connexion et réessayez.', foot: 'Les photos sont affichées sur l’écran de l’événement' },
+  ar: { loading: 'جارٍ التحميل…', share: 'شاركوا صوركم', pick: 'أضف صورًا', pickSub: 'التقط صورة أو اختر من المعرض · حتى 5 صور',
+        name: 'اسمك (اختياري)', namePh: 'مثال: ياسمين', msg: 'رسالة للعروسين (اختياري)', msgPh: 'مبروك! ❤️',
+        send: 'أرسل إلى الشاشة', sending: 'جارٍ الإرسال {n}/{t}…', doneT: 'شكرًا!', donePending: 'ستظهر صورك على الشاشة بعد الموافقة عليها.',
+        doneAuto: 'ستظهر صورك على الشاشة خلال ثوانٍ.', more: 'أرسل صورًا أخرى', closed: 'انتهت مشاركة الصور لهذا الحفل. شكرًا!',
+        notFound: 'لم يتم العثور على الحفل. امسح رمز QR مرة أخرى.', noEvent: 'امسح رمز QR المعروض في الحفل.',
+        tooMany: 'يمكنك إرسال 5 صور كحد أقصى في كل مرة.', badImg: 'تعذّرت قراءة هذه الصورة. جرّب صورة أخرى أو لقطة شاشة لها.',
+        failed: 'فشل الإرسال. تحقق من الاتصال وحاول مرة أخرى.', foot: 'تُعرض الصور على شاشة الحفل' }
+};
+const MAX_FILES = 5, MAX_SIDE = 1920, QUALITY = 0.85;
+const store = { get: (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+                set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+let lang = PW.param('lang') || store.get('pw_lang') ||
+  ((navigator.language || 'fr').slice(0, 2) === 'ar' ? 'ar' : (navigator.language || 'fr').slice(0, 2) === 'en' ? 'en' : 'fr');
+if (!T[lang]) lang = 'fr';
+const t = (k, v) => (T[lang][k] || T.en[k] || k).replace(/\{(\w+)\}/g, (_, x) => (v || {})[x]);
+
+const slug = (PW.param('e') || '').toLowerCase();
+let event = null, files = [], view = 'loading', lastAuto = false, draftMsg = '';
+const app = document.getElementById('app');
+
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('#lang button').forEach((b) => b.classList.toggle('on', b.dataset.l === lang));
+  document.querySelectorAll('[data-t]').forEach((el) => (el.textContent = t(el.dataset.t)));
+  render();
+}
+document.getElementById('lang').addEventListener('click', (e) => {
+  const l = e.target.dataset && e.target.dataset.l;
+  if (l) { lang = l; store.set('pw_lang', l); applyLang(); }
+});
+
+function render() {
+  if (view === 'loading') return;
+  if (view === 'info') { app.innerHTML = `<div class="center">${PW.esc(t(app.dataset.info))}</div>`; return; }
+  const head = `<header><div class="orn">✦ ✦ ✦</div><h1>${PW.esc(event.title)}</h1>
+    <p class="sub">${PW.esc(event.subtitle || t('share'))}</p></header>`;
+  if (view === 'done') {
+    app.innerHTML = head + `<div class="card done"><div class="big">✨</div><h2>${t('doneT')}</h2>
+      <p class="sub">${t(lastAuto ? 'doneAuto' : 'donePending')}</p>
+      <button class="ghost" id="again">${t('more')}</button></div>`;
+    document.getElementById('again').onclick = () => { files = []; view = 'form'; render(); };
+    return;
+  }
+  const nameEl = document.getElementById('name');
+  const name = nameEl ? nameEl.value : (store.get('pw_name') || '');
+  app.innerHTML = head + `<div class="card">
+      <label class="pick" for="file"><span class="ico">📷</span>${t('pick')}<small>${t('pickSub')}</small></label>
+      <input type="file" id="file" accept="image/*" multiple>
+      <div class="thumbs" id="thumbs"></div>
+      <label class="f" for="name">${t('name')}</label>
+      <input type="text" id="name" maxlength="40" autocomplete="given-name" placeholder="${PW.esc(t('namePh'))}" value="${PW.esc(name)}">
+      <label class="f" for="message">${t('msg')}</label>
+      <textarea id="message" maxlength="140" placeholder="${PW.esc(t('msgPh'))}">${PW.esc(draftMsg)}</textarea>
+      <div class="count"><span id="cnt">${draftMsg.length}</span>/140</div>
+      <button class="send" id="send" disabled>${t('send')}</button>
+      <div class="msg" id="msg"></div>
+    </div>`;
+  const fileInput = document.getElementById('file');
+  fileInput.onchange = () => { addFiles([...fileInput.files]); fileInput.value = ''; };
+  const ta = document.getElementById('message');
+  ta.oninput = () => { draftMsg = ta.value; document.getElementById('cnt').textContent = ta.value.length; };
+  document.getElementById('send').onclick = send;
+  drawThumbs();
+}
+
+function addFiles(list) {
+  const imgs = list.filter((f) => /^image\//.test(f.type) || /\.(heic|heif|jpe?g|png|webp)$/i.test(f.name));
+  const room = MAX_FILES - files.length;
+  if (imgs.length > room) setMsg(t('tooMany'), true); else setMsg('');
+  imgs.slice(0, Math.max(0, room)).forEach((f) => files.push({ file: f, url: URL.createObjectURL(f), state: '' }));
+  drawThumbs();
+}
+
+function drawThumbs() {
+  const box = document.getElementById('thumbs');
+  if (!box) return;
+  box.innerHTML = files.map((f, i) => `<div class="thumb"><img src="${f.url}" alt="">
+      ${f.state ? `<div class="st">${f.state}</div>` : `<button data-i="${i}" aria-label="Remove">×</button>`}</div>`).join('');
+  box.querySelectorAll('button[data-i]').forEach((b) => (b.onclick = () => {
+    URL.revokeObjectURL(files[+b.dataset.i].url); files.splice(+b.dataset.i, 1); drawThumbs();
+  }));
+  const s = document.getElementById('send');
+  if (s) s.disabled = !files.length;
+}
+
+function setMsg(text, err) {
+  const m = document.getElementById('msg');
+  if (m) { m.textContent = text; m.className = 'msg' + (err ? ' err' : ''); }
+}
+
+function loadImage(url) {
+  return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+}
+
+// Shrinks the photo on the phone before upload: faster on 4G and lighter to store.
+async function resize(url) {
+  const img = await loadImage(url);
+  const s = Math.min(1, MAX_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+  const w = Math.round(img.naturalWidth * s), h = Math.round(img.naturalHeight * s);
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  c.getContext('2d').drawImage(img, 0, 0, w, h);
+  const blob = await new Promise((r) => c.toBlob(r, 'image/jpeg', QUALITY));
+  if (!blob) throw new Error('encode');
+  return { blob, w, h };
+}
+
+async function send() {
+  const btn = document.getElementById('send');
+  const guest = document.getElementById('name').value.trim().slice(0, 40);
+  const message = document.getElementById('message').value.trim().slice(0, 140);
+  store.set('pw_name', guest);
+  btn.disabled = true; setMsg('');
+  const sb = PW.client();
+  let sent = 0, badImg = false, failed = false;
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    if (f.state === '✓') { sent++; continue; }
+    btn.textContent = t('sending', { n: i + 1, t: files.length });
+    f.state = '⏳'; drawThumbs();
+    let r;
+    try { r = await resize(f.url); } catch (e) { f.state = '⚠️'; badImg = true; drawThumbs(); continue; }
+    try {
+      const path = `${slug}/${PW.uuid()}.jpg`;
+      const up = await sb.storage.from('photos').upload(path, r.blob, { contentType: 'image/jpeg', cacheControl: '31536000', upsert: false });
+      if (up.error) throw up.error;
+      const ins = await sb.from('photos').insert({ event_slug: slug, path, guest_name: guest || null,
+        message: i === 0 ? (message || null) : null, width: r.w, height: r.h });
+      if (ins.error) throw ins.error;
+      f.state = '✓'; sent++;
+    } catch (e) {
+      console.error(e); f.state = '⚠️'; failed = true;
+      if (/closed/i.test((e && e.message) || '')) { view = 'info'; app.dataset.info = 'closed'; render(); return; }
+    }
+    drawThumbs();
+  }
+  if (sent === files.length) {
+    files.forEach((f) => URL.revokeObjectURL(f.url));
+    const fresh = await sb.from('events').select('*').eq('slug', slug).maybeSingle();
+    if (fresh.data) event = fresh.data; // auto-approve may have changed since the page opened
+    lastAuto = !!event.auto_approve; draftMsg = ''; view = 'done'; render();
+  } else {
+    files = files.filter((f) => f.state !== '✓');
+    files.forEach((f) => (f.state = ''));
+    drawThumbs();
+    btn.textContent = t('send'); btn.disabled = !files.length;
+    setMsg(t(failed ? 'failed' : 'badImg'), true);
+  }
+}
+
+async function init() {
+  if (!PW.configured) { app.innerHTML = PW.setupMessage; return; }
+  if (!slug) { view = 'info'; app.dataset.info = 'noEvent'; return applyLang(); }
+  const { data, error } = await PW.client().from('events').select('*').eq('slug', slug).maybeSingle();
+  if (error || !data) { view = 'info'; app.dataset.info = error ? 'failed' : 'notFound'; return applyLang(); }
+  event = data;
+  document.title = `${event.title} · ${t('share')}`;
+  if (!event.open) { view = 'info'; app.dataset.info = 'closed'; } else view = 'form';
+  applyLang();
+}
+applyLang();
+init();
+</script>
+</body>
+</html>
