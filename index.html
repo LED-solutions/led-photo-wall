@@ -61,6 +61,20 @@
   .center { text-align: center; color: var(--muted); padding: 60px 10px; }
   .foot { text-align: center; font-size: 12px; color: #6f645a; margin-top: 26px; }
   .hidden { display: none !important; }
+  button.pick { background: none; font-family: inherit; }
+  .cam { position: fixed; inset: 0; z-index: 50; background: #000; display: flex; flex-direction: column; }
+  .cam video { flex: 1; min-height: 0; width: 100%; object-fit: cover; background: #000; }
+  .cam video.mirror { transform: scaleX(-1); }
+  .cam .bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 22px calc(18px + env(safe-area-inset-bottom)); background: #000; }
+  .cam .side { width: 76px; min-height: 48px; display: flex; align-items: center; justify-content: center; }
+  .cam .side button { background: rgba(255,255,255,.14); color: #fff; border: 0; border-radius: 99px; padding: 10px 14px; font: 600 14px Inter, sans-serif; cursor: pointer; }
+  .cam .shut { width: 74px; height: 74px; border-radius: 50%; border: 5px solid #fff; background: var(--gold); cursor: pointer; flex: none; }
+  .cam .shut:active { transform: scale(.92); }
+  .cam .shut:disabled { opacity: .4; }
+  .cam .count { position: absolute; top: calc(14px + env(safe-area-inset-top)); left: 0; right: 0; text-align: center; color: #fff; font-weight: 600; text-shadow: 0 1px 6px #000; }
+  .cam .last { width: 48px; height: 48px; border-radius: 10px; object-fit: cover; border: 2px solid #fff; }
+  .cam .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; transition: opacity .25s; }
+  .cam .flash.on { opacity: .85; transition: none; }
 </style>
 </head>
 <body>
@@ -77,21 +91,21 @@
 <script src="app.js"></script>
 <script>
 const T = {
-  en: { loading: 'Loading…', share: 'Share your photos', pick: 'Add photos', pickSub: 'Take a picture or choose from your gallery · up to 5',
+  en: { loading: 'Loading…', share: 'Share your photos', pick: 'Take a photo', pickSub: 'Photos taken now at the event only · up to 5', shoot: 'Take the photo', flip: 'Switch camera', close: 'Done', camDenied: 'Allow the camera to take photos (browser settings), then try again.', notNow: 'Only photos taken right now at the event are accepted.',
         name: 'Your name (optional)', namePh: 'e.g. Yasmine', msg: 'A message for the couple (optional)', msgPh: 'Congratulations! ❤️',
         send: 'Send to the screen', sending: 'Sending {n}/{t}…', doneT: 'Thank you!', donePending: 'Your photos will appear on the screen once they are approved.',
         doneAuto: 'Your photos will appear on the screen in a few seconds.', more: 'Send more photos', closed: 'Photo sharing is closed for this event. Thank you!',
         notFound: 'This event was not found. Please scan the QR code again.', noEvent: 'Please scan the QR code shown at the event.',
         tooMany: 'You can send up to 5 photos at a time.', badImg: 'This photo could not be read. Try another one or a screenshot of it.',
         failed: 'Sending failed. Check your connection and try again.', foot: 'Photos are shown on the event screen' },
-  fr: { loading: 'Chargement…', share: 'Partagez vos photos', pick: 'Ajouter des photos', pickSub: 'Prenez une photo ou choisissez dans la galerie · 5 max',
+  fr: { loading: 'Chargement…', share: 'Partagez vos photos', pick: 'Prendre une photo', pickSub: 'Uniquement des photos prises maintenant \u00b7 5 max', shoot: 'Prendre la photo', flip: 'Changer de cam\u00e9ra', close: 'Terminer', camDenied: 'Autorisez la cam\u00e9ra pour prendre des photos (r\u00e9glages du navigateur), puis r\u00e9essayez.', notNow: 'Seules les photos prises maintenant pendant l\u2019\u00e9v\u00e9nement sont accept\u00e9es.',
         name: 'Votre prénom (facultatif)', namePh: 'ex. Yasmine', msg: 'Un mot pour les mariés (facultatif)', msgPh: 'Félicitations ! ❤️',
         send: 'Envoyer sur l’écran', sending: 'Envoi {n}/{t}…', doneT: 'Merci !', donePending: 'Vos photos apparaîtront sur l’écran après validation.',
         doneAuto: 'Vos photos apparaîtront sur l’écran dans quelques secondes.', more: 'Envoyer d’autres photos', closed: 'Le partage de photos est terminé pour cet événement. Merci !',
         notFound: 'Événement introuvable. Scannez à nouveau le QR code.', noEvent: 'Scannez le QR code affiché à l’événement.',
         tooMany: 'Vous pouvez envoyer 5 photos à la fois.', badImg: 'Cette photo n’a pas pu être lue. Essayez-en une autre ou une capture d’écran.',
         failed: 'Échec de l’envoi. Vérifiez votre connexion et réessayez.', foot: 'Les photos sont affichées sur l’écran de l’événement' },
-  ar: { loading: 'جارٍ التحميل…', share: 'شاركوا صوركم', pick: 'أضف صورًا', pickSub: 'التقط صورة أو اختر من المعرض · حتى 5 صور',
+  ar: { loading: 'جارٍ التحميل…', share: 'شاركوا صوركم', pick: 'التقط صورة', pickSub: 'فقط الصور الملتقطة الآن في الحفل · حتى 5 صور', shoot: 'التقط الصورة', flip: 'تبديل الكاميرا', close: 'تم', camDenied: 'اسمح باستخدام الكاميرا (إعدادات المتصفح) ثم حاول مرة أخرى.', notNow: 'تُقبل فقط الصور الملتقطة الآن في الحفل.',
         name: 'اسمك (اختياري)', namePh: 'مثال: ياسمين', msg: 'رسالة للعروسين (اختياري)', msgPh: 'مبروك! ❤️',
         send: 'أرسل إلى الشاشة', sending: 'جارٍ الإرسال {n}/{t}…', doneT: 'شكرًا!', donePending: 'ستظهر صورك على الشاشة بعد الموافقة عليها.',
         doneAuto: 'ستظهر صورك على الشاشة خلال ثوانٍ.', more: 'أرسل صورًا أخرى', closed: 'انتهت مشاركة الصور لهذا الحفل. شكرًا!',
@@ -138,8 +152,8 @@ function render() {
   const nameEl = document.getElementById('name');
   const name = nameEl ? nameEl.value : (store.get('pw_name') || '');
   app.innerHTML = head + `<div class="card">
-      <label class="pick" for="file"><span class="ico">📷</span>${t('pick')}<small>${t('pickSub')}</small></label>
-      <input type="file" id="file" accept="image/*" multiple>
+      <button type="button" class="pick" id="pick"><span class="ico">📷</span>${t('pick')}<small>${t('pickSub')}</small></button>
+      <input type="file" id="file" accept="image/*" capture="environment">
       <div class="thumbs" id="thumbs"></div>
       <label class="f" for="name">${t('name')}</label>
       <input type="text" id="name" maxlength="40" autocomplete="given-name" placeholder="${PW.esc(t('namePh'))}" value="${PW.esc(name)}">
@@ -151,14 +165,19 @@ function render() {
     </div>`;
   const fileInput = document.getElementById('file');
   fileInput.onchange = () => { addFiles([...fileInput.files]); fileInput.value = ''; };
+  document.getElementById('pick').onclick = openCamera;
   const ta = document.getElementById('message');
   ta.oninput = () => { draftMsg = ta.value; document.getElementById('cnt').textContent = ta.value.length; };
   document.getElementById('send').onclick = send;
   drawThumbs();
 }
 
+// Fallback when the in-page camera isn't available: the phone's camera app opens instead,
+// and only a photo taken in the last few minutes is accepted (no old gallery photos).
 function addFiles(list) {
-  const imgs = list.filter((f) => /^image\//.test(f.type) || /\.(heic|heif|jpe?g|png|webp)$/i.test(f.name));
+  let imgs = list.filter((f) => /^image\//.test(f.type) || /\.(heic|heif|jpe?g|png|webp)$/i.test(f.name));
+  const fresh = imgs.filter((f) => !f.lastModified || Date.now() - f.lastModified < FRESH_MS);
+  if (fresh.length < imgs.length) { setMsg(t('notNow'), true); imgs = fresh; if (!imgs.length) return; }
   const room = MAX_FILES - files.length;
   if (imgs.length > room) setMsg(t('tooMany'), true); else setMsg('');
   imgs.slice(0, Math.max(0, room)).forEach((f) => files.push({ file: f, url: URL.createObjectURL(f), state: '' }));
@@ -175,6 +194,64 @@ function drawThumbs() {
   }));
   const s = document.getElementById('send');
   if (s) s.disabled = !files.length;
+}
+
+// ---------- In-page camera: guests can only take a new photo, not pick one from the gallery ----------
+const FRESH_MS = 3 * 60 * 1000;
+let cam = null;
+async function openCamera() {
+  if (files.length >= MAX_FILES) { setMsg(t('tooMany'), true); return; }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { document.getElementById('file').click(); return; }
+  const el = document.createElement('div'); el.className = 'cam';
+  el.innerHTML = `<video playsinline muted autoplay></video><div class="flash"></div><div class="count"></div>
+    <div class="bar"><div class="side"><button type="button" class="close">${t('close')}</button></div>
+    <button type="button" class="shut" aria-label="${PW.esc(t('shoot'))}"></button>
+    <div class="side"><button type="button" class="flip" aria-label="${PW.esc(t('flip'))}">⟲</button></div></div>`;
+  document.body.appendChild(el);
+  cam = { el, facing: 'environment', stream: null };
+  el.querySelector('.close').onclick = closeCamera;
+  el.querySelector('.flip').onclick = () => { cam.facing = cam.facing === 'environment' ? 'user' : 'environment'; startStream(); };
+  el.querySelector('.shut').onclick = shoot;
+  updateCount();
+  const ok = await startStream();
+  if (!ok) { closeCamera(); setMsg(t('camDenied'), true); }
+}
+async function startStream() {
+  if (!cam) return false;
+  if (cam.stream) cam.stream.getTracks().forEach((tr) => tr.stop());
+  try {
+    cam.stream = await navigator.mediaDevices.getUserMedia({ audio: false,
+      video: { facingMode: { ideal: cam.facing }, width: { ideal: 1920 }, height: { ideal: 1920 } } });
+  } catch (e) { console.warn(e); return false; }
+  const v = cam.el.querySelector('video');
+  v.srcObject = cam.stream; v.classList.toggle('mirror', cam.facing === 'user');
+  try { await v.play(); } catch (e) {}
+  return true;
+}
+function updateCount() {
+  if (!cam) return;
+  cam.el.querySelector('.count').textContent = `${files.length} / ${MAX_FILES}`;
+  cam.el.querySelector('.shut').disabled = files.length >= MAX_FILES;
+}
+async function shoot() {
+  const v = cam && cam.el.querySelector('video');
+  if (!v || !v.videoWidth || files.length >= MAX_FILES) return;
+  const s = Math.min(1, MAX_SIDE / Math.max(v.videoWidth, v.videoHeight));
+  const c = document.createElement('canvas');
+  c.width = Math.round(v.videoWidth * s); c.height = Math.round(v.videoHeight * s);
+  c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+  const f = cam.el.querySelector('.flash'); f.classList.add('on'); setTimeout(() => f.classList.remove('on'), 60);
+  const blob = await new Promise((r) => c.toBlob(r, 'image/jpeg', QUALITY));
+  if (!blob) return;
+  const url = URL.createObjectURL(blob);
+  files.push({ file: blob, url, state: '' });
+  updateCount(); drawThumbs(); setMsg('');
+  if (files.length >= MAX_FILES) setTimeout(closeCamera, 500);
+}
+function closeCamera() {
+  if (!cam) return;
+  if (cam.stream) cam.stream.getTracks().forEach((tr) => tr.stop());
+  cam.el.remove(); cam = null;
 }
 
 function setMsg(text, err) {
